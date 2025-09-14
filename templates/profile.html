@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - UniMarket{% endblock %}
+
+{% block content %}
+<!-- Profile Header -->
+<div class="profile-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2><i class="fas fa-user-circle"></i> {{ session.user_name }}</h2>
+                <p class="mb-0">{{ session.user_email }}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="rating-stars">
+                    {% for i in range(1, 6) %}
+                        {% if i <= avg_rating %}
+                            <i class="fas fa-star"></i>
+                        {% else %}
+                            <i class="far fa-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                    <span class="ms-2">{{ avg_rating }}/5 ({{ rating_count }} reviews)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-number">{{ listings|length }}</div>
+                <div class="text-muted">Total Listings</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-number">{{ listings|selectattr('status', 'equalto', 'Sold')|list|length }}</div>
+                <div class="text-muted">Items Sold</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-number">{{ rating_count }}</div>
+                <div class="text-muted">Reviews Received</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- My Listings -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> My Listings</h5>
+                    <a href="{{ url_for('add_listing') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Add New
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if listings %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Price</th>
+                                    <th>Category</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for listing in listings %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if listing.image_path %}
+                                            <img src="{{ url_for('static', filename='../uploads/' + listing.image_path) }}" 
+                                                 class="rounded me-2" width="40" height="40" style="object-fit: cover;">
+                                            {% else %}
+                                            <div class="bg-light rounded me-2 d-flex align-items-center justify-content-center" 
+                                                 style="width: 40px; height: 40px;">
+                                                <i class="fas fa-image text-muted"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-bold">{{ listing.title }}</div>
+                                                <small class="text-muted">{{ listing.description[:30] }}...</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>₹{{ "%.0f"|format(listing.price) }}</td>
+                                    <td>{{ listing.category }}</td>
+                                    <td>
+                                        {% if listing.status == 'Available' %}
+                                        <span class="badge bg-success">Available</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Sold</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('listing_detail', listing_id=listing.id) }}" 
+                                           class="btn btn-outline-primary btn-sm">View</a>
+                                        {% if listing.status == 'Available' %}
+                                        <a href="{{ url_for('mark_sold', listing_id=listing.id) }}" 
+                                           class="btn btn-outline-warning btn-sm"
+                                           onclick="return confirm('Mark as sold?')">Mark Sold</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-plus fa-3x text-muted mb-3"></i>
+                        <h5>No listings yet</h5>
+                        <p class="text-muted">Start selling by adding your first listing</p>
+                        <a href="{{ url_for('add_listing') }}" class="btn btn-primary">Add First Listing</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Reviews -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-star"></i> Recent Reviews</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_ratings %}
+                    {% for rating in recent_ratings %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="rating-stars small">
+                                    {% for i in range(1, 6) %}
+                                        {% if i <= rating.rating %}
+                                            <i class="fas fa-star"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <small class="text-muted">by {{ rating.reviewer_name }}</small>
+                            </div>
+                        </div>
+                        {% if rating.review_text %}
+                        <p class="small mb-0 mt-2">{{ rating.review_text }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-star text-muted mb-2"></i>
+                        <p class="small text-muted mb-0">No reviews yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6><i class="fas fa-bolt"></i> Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('add_listing') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Add New Listing
+                        </a>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-search"></i> Browse Items
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
