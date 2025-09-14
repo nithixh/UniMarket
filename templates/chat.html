@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Chat with {{ other_user.name }} - UniMarket{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comments"></i> Chat with {{ other_user.name }}
+                    </h5>
+                    <small class="text-muted">{{ other_user.email }}</small>
+                </div>
+
+                <div class="card-body">
+                    <!-- Messages Container -->
+                    <div class="chat-container" id="chatContainer">
+                        {% if messages %}
+                            {% for message in messages %}
+                            <div class="message {% if message.sender_id == session.user_id %}sent{% else %}received{% endif %}">
+                                <div class="message-content">
+                                    {{ message.message_text }}
+                                </div>
+                                <div class="message-time">
+                                    <small class="text-muted">
+                                        {% if message.sender_id == session.user_id %}
+                                            You
+                                        {% else %}
+                                            {{ message.sender_name }}
+                                        {% endif %}
+                                        • {{ message.timestamp.strftime('%H:%M') }}
+                                    </small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-comment fa-3x mb-3"></i>
+                            <p>No messages yet. Start the conversation!</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Message Form -->
+                    <form id="messageForm" class="mt-3">
+                        <div class="input-group">
+                            <input type="hidden" name="receiver_id" value="{{ other_user_id }}">
+                            <input type="text" class="form-control" name="message_text" 
+                                   placeholder="Type your message..." required>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6><i class="fas fa-info-circle"></i> Chat Guidelines</h6>
+                    <ul class="small mb-0">
+                        <li>Be respectful and professional</li>
+                        <li>Discuss item details and meetup arrangements</li>
+                        <li>Don't share personal information unnecessarily</li>
+                        <li>Report inappropriate behavior</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.getElementById('messageForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const messageText = formData.get('message_text');
+
+    if (!messageText.trim()) return;
+
+    // Add message to chat immediately for better UX
+    const chatContainer = document.getElementById('chatContainer');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message sent';
+    messageDiv.innerHTML = `
+        <div class="message-content">${messageText}</div>
+        <div class="message-time">
+            <small class="text-muted">You • Just now</small>
+        </div>
+    `;
+    chatContainer.appendChild(messageDiv);
+
+    // Clear the input
+    this.querySelector('input[name="message_text"]').value = '';
+
+    // Scroll to bottom
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    // Send to server
+    fetch('{{ url_for("send_message") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            // Remove the message if sending failed
+            chatContainer.removeChild(messageDiv);
+            alert('Failed to send message. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        chatContainer.removeChild(messageDiv);
+        alert('Failed to send message. Please try again.');
+    });
+});
+
+// Auto-scroll to bottom on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const chatContainer = document.getElementById('chatContainer');
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+});
+
+// Auto-refresh messages every 10 seconds
+setInterval(function() {
+    location.reload();
+}, 10000);
+</script>
+{% endblock %}
+{% endblock %}
