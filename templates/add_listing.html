@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Add Listing - UniMarket{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h3><i class="fas fa-plus"></i> Add New Listing</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Item Title</label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   required placeholder="e.g. iPhone 12, Textbook, Bicycle">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="4" required placeholder="Describe your item, its condition, etc."></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="price" class="form-label">Price (₹)</label>
+                                <input type="number" class="form-control" id="price" name="price" 
+                                       required min="0" step="0.01" placeholder="0.00">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="">Select Category</option>
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Books">Books</option>
+                                    <option value="Clothing">Clothing</option>
+                                    <option value="Sports">Sports & Fitness</option>
+                                    <option value="Furniture">Furniture</option>
+                                    <option value="Vehicles">Vehicles</option>
+                                    <option value="Stationery">Stationery</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Product Image</label>
+                            <input type="file" class="form-control" id="image" name="image" 
+                                   accept="image/*">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle"></i> Upload a clear photo of your item (optional)
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus"></i> Add Listing
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    // Preview image before upload
+    document.getElementById('image').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // You can add image preview functionality here if needed
+                console.log('Image selected:', file.name);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}
