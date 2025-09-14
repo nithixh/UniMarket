@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Rate {{ seller.name }} - UniMarket{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h4><i class="fas fa-star"></i> Rate Seller</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h5>{{ seller.name }}</h5>
+                        <p class="text-muted">How was your experience with this seller?</p>
+                    </div>
+
+                    <form method="POST">
+                        <div class="mb-4 text-center">
+                            <label class="form-label">Rating</label>
+                            <div class="rating-input">
+                                <input type="radio" name="rating" value="5" id="star5" required>
+                                <label for="star5" class="star"><i class="fas fa-star"></i></label>
+
+                                <input type="radio" name="rating" value="4" id="star4" required>
+                                <label for="star4" class="star"><i class="fas fa-star"></i></label>
+
+                                <input type="radio" name="rating" value="3" id="star3" required>
+                                <label for="star3" class="star"><i class="fas fa-star"></i></label>
+
+                                <input type="radio" name="rating" value="2" id="star2" required>
+                                <label for="star2" class="star"><i class="fas fa-star"></i></label>
+
+                                <input type="radio" name="rating" value="1" id="star1" required>
+                                <label for="star1" class="star"><i class="fas fa-star"></i></label>
+                            </div>
+                            <div class="rating-text mt-2">
+                                <span id="ratingText" class="text-muted">Select a rating</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="review_text" class="form-label">Review (Optional)</label>
+                            <textarea class="form-control" id="review_text" name="review_text" 
+                                      rows="4" placeholder="Share your experience with other students..."></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-star"></i> Submit Rating
+                            </button>
+                            <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<style>
+.rating-input {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: center;
+}
+
+.rating-input input[type="radio"] {
+    display: none;
+}
+
+.rating-input label.star {
+    color: #ddd;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    margin: 0 5px;
+}
+
+.rating-input label.star:hover,
+.rating-input label.star:hover ~ label.star,
+.rating-input input[type="radio"]:checked ~ label.star {
+    color: #ffc107;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ratingInputs = document.querySelectorAll('input[name="rating"]');
+    const ratingText = document.getElementById('ratingText');
+
+    const ratingTexts = {
+        '1': 'Poor - Had a bad experience',
+        '2': 'Fair - Below expectations',
+        '3': 'Good - Met expectations',
+        '4': 'Very Good - Above expectations',
+        '5': 'Excellent - Exceeded expectations'
+    };
+
+    ratingInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            ratingText.textContent = ratingTexts[this.value];
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
