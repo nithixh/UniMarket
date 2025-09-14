@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}{{ listing.title }} - UniMarket{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    {% if listing.image_path %}
+                    <img src="{{ url_for('uploaded_file', filename=listing.image_path) }}" class="img-fluid rounded mb-3" alt="{{ listing.title }}">
+
+                    {% else %}
+                    <div class="bg-light text-center py-5 mb-3 rounded">
+                        <i class="fas fa-image fa-5x text-muted"></i>
+                        <p class="mt-2 text-muted">No image available</p>
+                    </div>
+                    {% endif %}
+
+                    <h2 class="mb-3">{{ listing.title }}</h2>
+
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <h4 class="price-tag">₹{{ "%.0f"|format(listing.price) }}</h4>
+                        </div>
+                        <div class="col-sm-6 text-sm-end">
+                            <span class="badge bg-secondary">{{ listing.category }}</span>
+                            {% if listing.status == 'Sold' %}
+                            <span class="badge bg-danger">Sold</span>
+                            {% else %}
+                            <span class="badge bg-success">Available</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <h5>Description</h5>
+                    <p class="text-muted">{{ listing.description }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-user"></i> Seller Information</h5>
+                </div>
+                <div class="card-body">
+                    <h6>{{ listing.seller_name }}</h6>
+                    <p class="text-muted">{{ listing.seller_email }}</p>
+
+                    <div class="mb-3">
+                        <div class="rating-stars">
+                            {% for i in range(1, 6) %}
+                                {% if i <= avg_rating %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <span class="ms-2">{{ avg_rating }}/5 ({{ rating_count }} reviews)</span>
+                        </div>
+                    </div>
+
+                    {% if session.user_id and session.user_id != listing.seller_id and listing.status == 'Available' %}
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('messages', other_user_id=listing.seller_id) }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-comment"></i> Contact Seller
+                        </a>
+                        <a href="{{ url_for('rate_seller', seller_id=listing.seller_id) }}" 
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-star"></i> Rate Seller
+                        </a>
+                    </div>
+                    {% elif session.user_id == listing.seller_id %}
+                    <div class="d-grid gap-2">
+                        {% if listing.status == 'Available' %}
+                        <a href="{{ url_for('mark_sold', listing_id=listing.id) }}" 
+                           class="btn btn-warning"
+                           onclick="return confirm('Mark this item as sold?')">
+                            <i class="fas fa-check"></i> Mark as Sold
+                        </a>
+                        {% else %}
+                        <button class="btn btn-secondary" disabled>
+                            <i class="fas fa-check"></i> Sold
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% elif not session.user_id %}
+                    <div class="d-grid">
+                        <a href="{{ url_for('login') }}" class="btn btn-primary">
+                            Login to Contact Seller
+                        </a>
+                    </div>
+                    {% elif listing.status == 'Sold' %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> This item has been sold.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Similar Items Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-tags"></i> Safety Tips</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small">
+                        <li>Meet in a public place on campus</li>
+                        <li>Inspect the item before payment</li>
+                        <li>Use cash on delivery (COD) only</li>
+                        <li>Don't share personal banking details</li>
+                        <li>Report suspicious behavior</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
