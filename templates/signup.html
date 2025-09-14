@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - UniMarket{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h3><i class="fas fa-user-plus"></i> Sign Up</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   required placeholder="Enter your full name">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">College Email</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   required placeholder="your.name@kongu.edu">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle"></i> Must be a valid Kongu Engineering College email
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" 
+                                   required minlength="6" placeholder="At least 6 characters">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="college_name" class="form-label">College Name</label>
+                            <input type="text" class="form-control" id="college_name" name="college_name" 
+                                   required value="Kongu Engineering College" readonly>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus"></i> Create Account
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
