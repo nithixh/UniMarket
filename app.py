@@ -222,6 +222,58 @@ def listing_detail(listing_id):
     return render_template('listing_detail.html', listing=listing, 
                          avg_rating=round(avg_rating, 1), rating_count=rating_count)
 
+@app.route('/chats')
+def chats():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    current_user_id = session['user_id']
+
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+
+    # Get latest message per conversation
+    cur.execute("""
+        SELECT u.id AS sender_id,
+               u.name AS sender_name,
+               m.message_text,
+               m.timestamp
+        FROM (
+            SELECT 
+                CASE 
+                    WHEN sender_id = %s THEN receiver_id
+                    ELSE sender_id
+                END AS other_user_id,
+                message_text,
+                timestamp
+            FROM messages
+            WHERE sender_id = %s OR receiver_id = %s
+        ) m
+        JOIN users u ON u.id = m.other_user_id
+        JOIN (
+            -- get latest timestamp per conversation
+            SELECT 
+                CASE 
+                    WHEN sender_id = %s THEN receiver_id
+                    ELSE sender_id
+                END AS other_user_id,
+                MAX(timestamp) AS latest_time
+            FROM messages
+            WHERE sender_id = %s OR receiver_id = %s
+            GROUP BY other_user_id
+        ) latest ON latest.other_user_id = m.other_user_id AND latest.latest_time = m.timestamp
+        ORDER BY m.timestamp DESC
+    """, (current_user_id, current_user_id, current_user_id,
+          current_user_id, current_user_id, current_user_id))
+
+    senders = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    return render_template('message.html', senders=senders)
+
+
+
 @app.route('/messages/<int:other_user_id>')
 def messages(other_user_id):
     if 'user_id' not in session:
