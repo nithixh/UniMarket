@@ -83,8 +83,15 @@ document.getElementById('messageForm').addEventListener('submit', function(e) {
 
     if (!messageText.trim()) return;
 
-    // Add message to chat immediately for better UX
     const chatContainer = document.getElementById('chatContainer');
+
+    // Remove "No messages yet" placeholder if it exists
+    const placeholder = chatContainer.querySelector('.text-center.text-muted');
+    if (placeholder) {
+        placeholder.remove();
+    }
+
+    // Add message to chat immediately
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message sent';
     messageDiv.innerHTML = `
@@ -112,6 +119,16 @@ document.getElementById('messageForm').addEventListener('submit', function(e) {
             // Remove the message if sending failed
             chatContainer.removeChild(messageDiv);
             alert('Failed to send message. Please try again.');
+            // Optionally show placeholder again if chat is empty
+            if (!chatContainer.querySelector('.message')) {
+                const placeholderDiv = document.createElement('div');
+                placeholderDiv.className = 'text-center text-muted py-4';
+                placeholderDiv.innerHTML = `
+                    <i class="fas fa-comment fa-3x mb-3"></i>
+                    <p>No messages yet. Start the conversation!</p>
+                `;
+                chatContainer.appendChild(placeholderDiv);
+            }
         }
     })
     .catch(error => {
@@ -121,6 +138,7 @@ document.getElementById('messageForm').addEventListener('submit', function(e) {
     });
 });
 
+
 // Auto-scroll to bottom on page load
 document.addEventListener('DOMContentLoaded', function() {
     const chatContainer = document.getElementById('chatContainer');
@@ -128,8 +146,18 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Auto-refresh messages every 10 seconds
-setInterval(function() {
+/*setInterval(function() {
     location.reload();
+}, 10000);*/
+setInterval(function() {
+    fetch(window.location.href)
+        .then(res => res.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newMessages = doc.getElementById('chatContainer').innerHTML;
+            document.getElementById('chatContainer').innerHTML = newMessages;
+        });
 }, 10000);
 </script>
 {% endblock %}
