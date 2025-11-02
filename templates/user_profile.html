@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}{{ user.name }}'s Profile - UniMarket{% endblock %}
+
+{% block content %}
+<div class="profile-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2><i class="fas fa-user-circle"></i> {{ user.name }}</h2>
+                <p class="mb-0">{{ user.email }}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="rating-stars">
+                    {% for i in range(1, 6) %}
+                        {% if i <= avg_rating %}
+                            <i class="fas fa-star"></i>
+                        {% else %}
+                            <i class="far fa-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                    <span class="ms-2">{{ avg_rating }}/5 ({{ total_reviews }} reviews)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- Listings -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Listings by {{ user.name }}</h5>
+                </div>
+                <div class="card-body">
+                    {% set available_items = listings | selectattr('status', 'equalto', 'Available') | list %}
+                    {% if available_items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Price</th>
+                                    <th>Category</th>
+                                    <th>Status</th>
+                                    <th>View</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for listing in available_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if listing.image_path %}
+                                            <img src="{{ url_for('uploaded_file', filename=listing.image_path) }}"
+                                                 class="rounded me-2" width="40" height="40" style="object-fit: cover;">
+                                            {% else %}
+                                            <div class="bg-light rounded me-2 d-flex align-items-center justify-content-center" 
+                                                 style="width: 40px; height: 40px;">
+                                                <i class="fas fa-image text-muted"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-bold">{{ listing.title }}</div>
+                                                <small class="text-muted">{{ listing.description[:30] }}...</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>₹{{ "%.0f"|format(listing.price) }}</td>
+                                    <td>{{ listing.category }}</td>
+                                    <td><span class="badge bg-success">Available</span></td>
+                                    <td>
+                                        <a href="{{ url_for('listing_detail', listing_id=listing.id) }}" 
+                                           class="btn btn-outline-primary btn-sm">View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                        <h5>No available items</h5>
+                        <p class="text-muted">This user hasn't listed any items yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Reviews -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-star"></i> Recent Reviews</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_ratings %}
+                    {% for rating in recent_ratings %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="rating-stars small mb-1">
+                            {% for i in range(1, 6) %}
+                                {% if i <= rating.rating %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <small class="text-muted">by {{ rating.reviewer_name }}</small>
+                        {% if rating.review_text %}
+                        <p class="small mb-0 mt-2">{{ rating.review_text }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-star text-muted mb-2"></i>
+                        <p class="small text-muted mb-0">No reviews yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
