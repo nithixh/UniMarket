@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - UniMarket</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f1f4f9;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .admin-header {
+            text-align: center;
+            background: linear-gradient(90deg, #2b5876, #4e4376);
+            color: white;
+            padding: 25px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        }
+
+        .admin-navbar {
+            background-color: #394867 !important;
+        }
+
+        .admin-summary {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .summary-card {
+            background-color: white;
+            border-left: 5px solid #4e4376;
+            border-radius: 10px;
+            padding: 15px 25px;
+            width: 280px;
+            margin: 10px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .summary-card:hover {
+            transform: scale(1.03);
+        }
+
+        .summary-card h4 {
+            color: #394867;
+            font-weight: bold;
+        }
+
+        .summary-card p {
+            font-size: 22px;
+            font-weight: 600;
+            color: #2b5876;
+        }
+
+        table {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
+
+        thead {
+            background-color: #4e4376;
+            color: white;
+        }
+
+        tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .btn-danger {
+            background-color: #c1121f;
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background-color: #a40e1a;
+        }
+
+        .btn-warning {
+            color: white;
+            background-color: #ffb703;
+            border: none;
+        }
+
+        .btn-warning:hover {
+            background-color: #e09e00;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Admin Navbar -->
+<nav class="navbar navbar-expand-lg admin-navbar">
+    <div class="container">
+        <a class="navbar-brand text-white" href="{{ url_for('admin_dashboard') }}">
+            <i class="fas fa-user-shield"></i> Admin Panel
+        </a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{{ url_for('admin_dashboard') }}">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                </li>
+            </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{{ url_for('logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Admin Header -->
+<div class="admin-header">
+    <h2><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h2>
+    <p>Manage users, listings, and reviews effectively</p>
+</div>
+
+<!-- Dashboard Summary -->
+<div class="container admin-summary">
+    <div class="summary-card">
+        <h4><i class="fas fa-users"></i> Total Users</h4>
+        <p>{{ total_users }}</p>
+    </div>
+    <div class="summary-card">
+        <h4><i class="fas fa-box-open"></i> Total Listings</h4>
+        <p>{{ total_listings }}</p>
+    </div>
+    <div class="summary-card">
+        <h4><i class="fas fa-star"></i> Total Reviews</h4>
+        <p>{{ total_reviews }}</p>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="container mt-4">
+    <h4 class="mb-3"><i class="fas fa-users"></i> All Users</h4>
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Total Listings</th>
+                    <th>Average Rating</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.listing_count }}</td>
+                    <td>{{ user.avg_rating or 'N/A' }}</td>
+                    <td>
+                        <a href="{{ url_for('admin_delete_user', user_id=user.id) }}" 
+                           class="btn btn-danger btn-sm" 
+                           onclick="return confirm('Are you sure you want to delete this user and all their data?')">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not users %}
+                <tr><td colspan="6" class="text-center text-muted">No users found</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
