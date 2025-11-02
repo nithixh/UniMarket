@@ -73,6 +73,8 @@ def index():
     return render_template('index.html', listings=listings, categories=categories, 
                          search=search, selected_category=category)
 
+
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -112,38 +114,64 @@ def signup():
 
     return render_template('signup.html')
 
-@app.route('/login', methods=['GET', 'POST'])
+from werkzeug.security import check_password_hash
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
 
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
+        conn.close()
 
-        if user and check_password_hash(user['password'], password):
-            session['user_id'] = user['id']
-            session['user_name'] = user['name']
-            session['user_email'] = user['email']
-            flash('Login successful!', 'success')
-            cursor.close()
-            conn.close()
-            return redirect(url_for('index'))
+        if not user:
+            flash("Invalid email or password!", "error")
+            return redirect(url_for("login"))
+
+        # --- Admin login check ---
+        if email == "admin@kongu.edu":
+            if check_password_hash(user["password"], password):
+                session["user_id"] = user["id"]
+                session["user_name"] = user["name"]
+                session["is_admin"] = True
+                flash("Welcome Admin!", "success")
+                return redirect(url_for("admin_dashboard"))
+            else:
+                flash("Invalid admin credentials!", "error")
+                return redirect(url_for("login"))
+
+        # --- Normal user login ---
+        if check_password_hash(user["password"], password):
+            session["user_id"] = user["id"]
+            session["user_name"] = user["name"]
+            session["is_admin"] = False
+            flash("Login successful!", "success")
+            return redirect(url_for("index"))
         else:
-            flash('Invalid email or password', 'error')
-            cursor.close()
-            conn.close()
+            flash("Invalid email or password!", "error")
+            return redirect(url_for("login"))
 
-    return render_template('login.html')
+    # Always render login page for GET request
+    return render_template("login.html")
+
+
 
 @app.route('/logout')
 def logout():
+    if session.get('is_admin'):
+        session.clear()
+        flash('Admin logged out', 'info')
+        return redirect(url_for('login'))
+
     session.clear()
     flash('You have been logged out', 'info')
     return redirect(url_for('index'))
+
+
 
 @app.route('/add_listing', methods=['GET', 'POST'])
 def add_listing():
@@ -284,7 +312,7 @@ def messages(other_user_id):
     cursor = conn.cursor(dictionary=True)
 
     # Get other user info
-    cursor.execute("SELECT name, email FROM users WHERE id = %s", (other_user_id,))
+    cursor.execute("SELECT id, name, email FROM users WHERE id = %s", (other_user_id,))
     other_user = cursor.fetchone()
 
     if not other_user:
@@ -445,10 +473,161 @@ def profile():
 
     cursor.close()
     conn.close()
-
     return render_template('profile.html', listings=user_listings, 
                          avg_rating=round(avg_rating, 1), rating_count=rating_count,
                          recent_ratings=recent_ratings)
+
+@app.route('/user_profile/<int:user_id>')
+def user_profile(user_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Fetch user details
+    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+    if not user:
+        cursor.close()
+        conn.close()
+        flash("User not found.", "danger")
+        return redirect(url_for('dashboard'))
+
+    # Fetch listings posted by this user
+    cursor.execute("""
+        SELECT id, title, description, price, category, image_path, status, created_at
+        FROM listings
+        WHERE seller_id = %s
+        ORDER BY created_at DESC
+    """, (user_id,))
+    listings = cursor.fetchall()
+
+    # Fetch average rating and total reviews for this seller
+    cursor.execute("""
+        SELECT 
+            ROUND(AVG(rating), 1) AS avg_rating,
+            COUNT(*) AS total_reviews
+        FROM ratings
+        WHERE seller_id = %s
+    """, (user_id,))
+    rating_data = cursor.fetchone()
+
+    avg_rating = rating_data['avg_rating'] if rating_data and rating_data['avg_rating'] else 0
+    total_reviews = rating_data['total_reviews'] if rating_data and rating_data['total_reviews'] else 0
+
+    # Fetch recent reviews
+    cursor.execute("""
+        SELECT r.rating, r.review_text, u.name AS reviewer_name
+        FROM ratings r
+        JOIN users u ON r.reviewer_id = u.id
+        WHERE r.seller_id = %s
+        ORDER BY r.created_at DESC
+        LIMIT 5
+    """, (user_id,))
+    recent_ratings = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'user_profile.html',
+        user=user,
+        listings=listings,
+        avg_rating=avg_rating,
+        total_reviews=total_reviews,
+        recent_ratings=recent_ratings
+    )
+
+@app.route('/admin_dashboard')
+def admin_dashboard():
+    if not session.get('is_admin'):
+        flash('Access denied', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Dashboard stats
+    cursor.execute("SELECT COUNT(*) AS total_users FROM users WHERE email != 'admin@kongu.edu'")
+    total_users = cursor.fetchone()['total_users']
+
+    cursor.execute("SELECT COUNT(*) AS total_listings FROM listings")
+    total_listings = cursor.fetchone()['total_listings']
+
+    cursor.execute("SELECT COUNT(*) AS total_reviews FROM ratings")
+    total_reviews = cursor.fetchone()['total_reviews']
+
+    # Get all users with total listings and avg ratings
+    cursor.execute("""
+        SELECT 
+            u.id,
+            u.name,
+            u.email,
+            u.college_name,
+            COUNT(DISTINCT l.id) AS listing_count,
+            ROUND(AVG(r.rating), 1) AS avg_rating
+        FROM users u
+        LEFT JOIN listings l ON u.id = l.seller_id
+        LEFT JOIN ratings r ON u.id = r.seller_id
+        WHERE u.email != 'admin@kongu.edu'
+        GROUP BY u.id
+        ORDER BY u.id
+    """)
+    users = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'admin_dashboard.html',
+        total_users=total_users,
+        total_listings=total_listings,
+        total_reviews=total_reviews,
+        users=users
+    )
+
+
+@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+def admin_delete_user(user_id):
+    if not session.get('is_admin'):
+        flash('Access denied', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Delete all related data
+    cursor.execute("DELETE FROM messages WHERE sender_id = %s OR receiver_id = %s", (user_id, user_id))
+    cursor.execute("DELETE FROM ratings WHERE reviewer_id = %s OR seller_id = %s", (user_id, user_id))
+    cursor.execute("DELETE FROM listings WHERE seller_id = %s", (user_id,))
+    cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash('User and related data deleted successfully!', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+
+@app.route('/admin/delete_listing/<int:listing_id>', methods=['POST'])
+def admin_delete_listing(listing_id):
+    if not session.get('is_admin'):
+        flash('Access denied', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM listings WHERE id = %s", (listing_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash('Listing deleted successfully!', 'success')
+    return redirect(url_for('admin_dashboard'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)
