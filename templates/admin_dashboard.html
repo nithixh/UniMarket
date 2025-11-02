@@ -75,6 +75,15 @@
             background-color: #f5f5f5;
         }
 
+        .btn-primary{
+            background-color: #394867;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #2b5876;
+        }
+        
         .btn-danger {
             background-color: #c1121f;
             border: none;
@@ -110,6 +119,11 @@
                         <i class="fas fa-home"></i> Home
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{{ url_for('admin_listings') }}">
+                        <i class="fas fa-box-open"></i> Listings
+                    </a>
+                </li>
             </ul>
             <ul class="navbar-nav">
                 <li class="nav-item">
@@ -143,6 +157,13 @@
         <p>{{ total_reviews }}</p>
     </div>
 </div>
+
+<div class="text-center mb-4">
+    <a href="{{ url_for('admin_listings') }}" class="btn btn-primary px-4">
+        <i class="fas fa-box"></i> View All Listings
+    </a>
+</div>
+
 
 <!-- Users Table -->
 <div class="container mt-4">
